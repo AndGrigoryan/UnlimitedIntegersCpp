@@ -48,6 +48,15 @@ private:
 		this->digits.insert(this->digits.begin(), power, '0');
 	}
 
+	bool isZero() const
+	{
+		if (this->digits.size() == 1 && this->digits[0] == '0')
+		{
+			return true;
+		}
+		return false;
+	}
+
 public:
 	//constructor
 	BigInt(std::string num)
@@ -67,6 +76,15 @@ public:
 		std::cout << std::endl;
 	}
 
+	std::ostream& operator<<(std::ostream& os)
+	{
+		for (auto it = this->digits.rbegin(); it != this->digits.rend(); ++it)
+		{
+			os << *it;
+		}
+		return os;
+	}
+
 	BigInt& operator=(const BigInt& other)
 	{
 		if (this != &other)
@@ -79,6 +97,27 @@ public:
 		}
 
 		return *this;
+	}
+
+	bool operator>=(const BigInt& other)
+	{
+		if (this->digits.size() > other.digits.size())
+		{
+			return true;
+		}
+		if (this->digits.size() == other.digits.size())
+		{
+			for (int i = this->digits.size() - 1; i >= 0; --i)
+			{
+				if (this->digits[i] < other.digits[i])
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+		return false;
+		
 	}
 
 	BigInt& operator+(const BigInt& other) const
@@ -172,7 +211,7 @@ public:
 	{
 		BigInt* result = new BigInt("0");
 
-		if (other.digits.size() == 1 && other.digits[0] == '0')
+		if (other.isZero())
 		{
 			return *result;
 		}
@@ -189,17 +228,44 @@ public:
 
 	}
 
+	BigInt& operator/(const BigInt& other)
+	{
+		if (other.isZero())
+		{
+			throw std::invalid_argument("Can't divide by zero.");
+		}
+
+		BigInt* result = new BigInt("0");
+
+		BigInt divisor(other);
+
+		while (*this >= divisor)
+		{
+			*this = *this - divisor;
+			*result = *result + BigInt("1");
+		}
+
+		return *result;
+	}
+
 };
 
 int main()
 {
 
-	BigInt num1("22");
-	BigInt num2("0");
+	BigInt num1("500");
+	BigInt num2("5");
 
-	BigInt num3 = num1 * num2;
+	try
+	{
+		BigInt num3 = num1 / num2;
+		std::cout << num3 << std::endl;
+	}
+	catch (const std::invalid_argument& e)
+	{
+		std::cerr << "Error: " << e.what() << std::endl;
+	}
 
-	num3.print();
 
 	return 0;
 }
