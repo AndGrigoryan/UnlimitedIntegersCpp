@@ -3,20 +3,53 @@
 #include <string>
 
 
-class INumber
-{
-public:
-	virtual void print() const = 0;
-	virtual INumber* operator+(const INumber& other) const = 0;
-	virtual INumber* operator-(const INumber& other) const = 0;
-};
-
-class BigInt : public INumber 
+class BigInt
 {
 private:
-    std::vector<char> digits;
+	std::vector<char> digits;
+
+
+	BigInt* MultiplyByDigit(short digit) const
+	{
+		std::string result = "";
+		short carry = 0;
+
+		for (int i = 0; i < this->digits.size() || carry; ++i)
+		{
+			if (i == result.size())
+			{
+				result.push_back('0');
+			}
+
+			short currentDigit;
+			if (i < this->digits.size())
+			{
+				currentDigit = short(this->digits[i] - '0');
+			}
+			else
+			{
+				currentDigit = 0;
+			}
+
+			short product = currentDigit * digit + carry;
+			carry = product / 10;
+			result[i] = '0' + product % 10;
+		}
+
+		std::reverse(result.begin(), result.end());
+
+		BigInt* tmp = new BigInt(result);
+
+		return tmp;
+	}
+
+	void MultiplyByPowerOf10(short power)
+	{
+		this->digits.insert(this->digits.begin(), power, '0');
+	}
 
 public:
+	//constructor
 	BigInt(std::string num)
 	{
 		for (int i = num.size() - 1; i >= 0; --i)
@@ -25,7 +58,7 @@ public:
 		}
 	}
 
-	void print() const override
+	void print() const
 	{
 		for (auto it = digits.rbegin(); it != digits.rend(); ++it)
 		{
@@ -34,16 +67,27 @@ public:
 		std::cout << std::endl;
 	}
 
-
-
-	INumber* operator+(const INumber& other) const override
+	BigInt& operator=(const BigInt& other)
 	{
-		const BigInt& otherBigInt = dynamic_cast<const BigInt&>(other);
+		if (this != &other)
+		{
+			this->digits.clear();
+			for (int i = 0; i < other.digits.size(); ++i)
+			{
+				this->digits.push_back(other.digits[i]);
+			}
+		}
+
+		return *this;
+	}
+
+	BigInt& operator+(const BigInt& other) const
+	{
 		std::string result = "";
 
 		int carry = 0;
 
-		for (int i = 0; i < std::max(this->digits.size(), otherBigInt.digits.size()) || carry; ++i)
+		for (int i = 0; i < std::max(this->digits.size(), other.digits.size()) || carry; ++i)
 		{
 			if (i == result.size())
 			{
@@ -56,31 +100,29 @@ public:
 			{
 				sum += int(this->digits[i] - '0');
 			}
-			if (i < otherBigInt.digits.size())
+			if (i < other.digits.size())
 			{
-				sum += int(otherBigInt.digits[i] - '0');
+				sum += int(other.digits[i] - '0');
 			}
 			carry = sum / 10;
 			result[i] = '0' + sum % 10;
 
-			
+
 		}
 
 		std::reverse(result.begin(), result.end());
 
-		INumber* tmp = new BigInt(result);
+		BigInt* tmp = new BigInt(result);
 
-		return tmp;
+		return *tmp;
 	}
 
-	INumber* operator-(const INumber& other) const override
+	BigInt& operator-(const BigInt& other) const
 	{
-		const BigInt& otherBigInt = dynamic_cast<const BigInt&>(other);
 		std::string result = "";
 		int borrow = 0;
 
-
-		for (int i = 0; i < std::max(this->digits.size(), otherBigInt.digits.size()) || borrow; ++i)
+		for (int i = 0; i < std::max(this->digits.size(), other.digits.size()) || borrow; ++i)
 		{
 
 			if (i == result.size())
@@ -94,9 +136,9 @@ public:
 			{
 				diff += int(this->digits[i] - '0');
 			}
-			if (i < otherBigInt.digits.size())
+			if (i < other.digits.size())
 			{
-				diff -= int(otherBigInt.digits[i] - '0');
+				diff -= int(other.digits[i] - '0');
 			}
 
 			if (diff < 0)
@@ -119,10 +161,31 @@ public:
 
 		std::reverse(result.begin(), result.end());
 
-		INumber* tmp = new BigInt(result);
+		BigInt* tmp = new BigInt(result);
 
 
-		return tmp;
+		return *tmp;
+
+	}
+
+	BigInt& operator*(const BigInt& other)
+	{
+		BigInt* result = new BigInt("0");
+
+		if (other.digits.size() == 1 && other.digits[0] == '0')
+		{
+			return *result;
+		}
+		
+		for (int i = 0; i < other.digits.size(); ++i)
+		{
+			short digit = other.digits[i] - '0';
+			BigInt* partialProduct = MultiplyByDigit(digit);
+			partialProduct->MultiplyByPowerOf10(i);
+			*result = *result + *partialProduct;
+		}
+
+		return *result;
 
 	}
 
@@ -131,19 +194,12 @@ public:
 int main()
 {
 
-	INumber* num1 = new BigInt("200");
-	INumber* num2 = new BigInt("250");          
+	BigInt num1("22");
+	BigInt num2("0");
 
-	INumber* num3 = *num1 - *num2;
+	BigInt num3 = num1 * num2;
 
-	num1->print();
-	num2->print();
-	num3->print();
-
-
-	delete num1;
-	delete num2;
-	delete num3;
+	num3.print();
 
 	return 0;
 }
