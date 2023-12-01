@@ -7,6 +7,7 @@ class BigInt
 {
 private:
 	std::vector<char> digits;
+	bool isNegative;
 
 
 	BigInt* MultiplyByDigit(short digit) const
@@ -67,6 +68,8 @@ public:
 		}
 	}
 
+	friend std::ostream& operator<<(std::ostream& os, const BigInt& num);
+
 	void print() const
 	{
 		for (auto it = digits.rbegin(); it != digits.rend(); ++it)
@@ -74,15 +77,6 @@ public:
 			std::cout << *it;
 		}
 		std::cout << std::endl;
-	}
-
-	std::ostream& operator<<(std::ostream& os)
-	{
-		for (auto it = this->digits.rbegin(); it != this->digits.rend(); ++it)
-		{
-			os << *it;
-		}
-		return os;
 	}
 
 	BigInt& operator=(const BigInt& other)
@@ -250,11 +244,20 @@ public:
 
 };
 
+std::ostream& operator<<(std::ostream& os, const BigInt& num)
+{
+	for (int i = num.digits.size() - 1; i >= 0; i--)
+	{
+		os << num.digits[i];
+	}
+	return os;
+}
+
 int main()
 {
 
 	BigInt num1("500");
-	BigInt num2("5");
+	BigInt num2("2");
 
 	try
 	{
