@@ -9,7 +9,6 @@ private:
 	std::vector<char> digits;
 	bool isNegative;
 
-
 	BigInt* MultiplyByDigit(short digit) const
 	{
 		std::string result = "";
@@ -58,63 +57,7 @@ private:
 		return false;
 	}
 
-public:
-	//constructor
-	BigInt(std::string num)
-	{
-		for (int i = num.size() - 1; i >= 0; --i)
-		{
-			this->digits.push_back(num[i]);
-		}
-	}
-
-	friend std::ostream& operator<<(std::ostream& os, const BigInt& num);
-
-	void print() const
-	{
-		for (auto it = digits.rbegin(); it != digits.rend(); ++it)
-		{
-			std::cout << *it;
-		}
-		std::cout << std::endl;
-	}
-
-	BigInt& operator=(const BigInt& other)
-	{
-		if (this != &other)
-		{
-			this->digits.clear();
-			for (int i = 0; i < other.digits.size(); ++i)
-			{
-				this->digits.push_back(other.digits[i]);
-			}
-		}
-
-		return *this;
-	}
-
-	bool operator>=(const BigInt& other)
-	{
-		if (this->digits.size() > other.digits.size())
-		{
-			return true;
-		}
-		if (this->digits.size() == other.digits.size())
-		{
-			for (int i = this->digits.size() - 1; i >= 0; --i)
-			{
-				if (this->digits[i] < other.digits[i])
-				{
-					return false;
-				}
-			}
-			return true;
-		}
-		return false;
-		
-	}
-
-	BigInt& operator+(const BigInt& other) const
+	BigInt* sumPositive(const BigInt& other) const
 	{
 		std::string result = "";
 
@@ -146,18 +89,16 @@ public:
 		std::reverse(result.begin(), result.end());
 
 		BigInt* tmp = new BigInt(result);
-
-		return *tmp;
+		return tmp;
 	}
 
-	BigInt& operator-(const BigInt& other) const
+	BigInt* subtractPositive(const BigInt& other) const
 	{
 		std::string result = "";
 		int borrow = 0;
 
 		for (int i = 0; i < std::max(this->digits.size(), other.digits.size()) || borrow; ++i)
 		{
-
 			if (i == result.size())
 			{
 				result.push_back('0');
@@ -195,17 +136,152 @@ public:
 		std::reverse(result.begin(), result.end());
 
 		BigInt* tmp = new BigInt(result);
-
-
-		return *tmp;
-
+		return tmp;
 	}
 
-	BigInt& operator*(const BigInt& other)
+public:
+	//constructor
+	BigInt(std::string num)
+	{
+		if (num[0] == '-')
+		{
+			this->isNegative = true;
+			num = num.substr(1);
+		}
+		else
+		{
+			this->isNegative = false;
+		}
+		for (int i = num.size() - 1; i >= 0; --i)
+		{
+			this->digits.push_back(num[i]);
+		}
+	}
+
+	friend std::ostream& operator<<(std::ostream& os, const BigInt& num);
+
+	void print() const
+	{
+		for (auto it = digits.rbegin(); it != digits.rend(); ++it)
+		{
+			std::cout << *it;
+		}
+		std::cout << std::endl;
+	}
+
+	BigInt& operator=(const BigInt& other)
+	{
+		if (this != &other)
+		{
+			this->digits.clear();
+			this->isNegative = other.isNegative;
+			for (int i = 0; i < other.digits.size(); ++i)
+			{
+				this->digits.push_back(other.digits[i]);
+			}
+		}
+
+		return *this;
+	}
+
+	bool operator>=(const BigInt& other)
+	{
+		if (this->digits.size() > other.digits.size())
+		{
+			return true;
+		}
+		if (this->digits.size() == other.digits.size())
+		{
+			for (int i = this->digits.size() - 1; i >= 0; --i)
+			{
+				if (this->digits[i] < other.digits[i])
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+		return false;
+		
+	}
+
+	BigInt& operator+(BigInt& other)
+	{
+		if (this->isNegative && other.isNegative)
+		{
+			//negative + negative = -(-negative + -negative)
+			this->isNegative = false;
+			other.isNegative = false;
+			BigInt* result = sumPositive(other);
+			result->isNegative = true;
+			return *result;
+		}
+		else if (this->isNegative && !other.isNegative)
+		{
+			//negative + positive = positive - -negative
+			this->isNegative = false;
+			BigInt* result = &other.operator-(*this);
+			return *result;
+
+		}
+		else if (!this->isNegative && other.isNegative)
+		{
+			//positive + negative = positive - positive
+			other.isNegative = false;
+			BigInt* result = &operator-(other);
+			return *result;
+		}
+		else
+		{
+			return *sumPositive(other);
+		}
+	}
+
+	BigInt& operator-(BigInt& other)
+	{
+		if (this->isNegative && !other.isNegative)
+		{
+			// negative - positive = -(-negative + positive)
+			this->isNegative = false;
+			BigInt* result = &operator+(other);
+			result->isNegative = true;
+			return *result;
+		}
+		else if (!this->isNegative && other.isNegative)
+		{
+			//positive - negative = positive + -negative
+			other.isNegative = false;
+			BigInt* result = &operator+(other);
+			result->isNegative = false;
+			return *result;
+		}
+		else if (this->isNegative && other.isNegative)
+		{
+			//negative - negative = -(-negative + -negative)
+			this->isNegative = false;
+			other.isNegative = false;
+			BigInt* result = &operator+(other);
+			result->isNegative = true;
+			return *result;
+		}
+		else if(!operator>=(other))
+		{
+			//positve - BigPositive = -(BigPositive - positve)
+			BigInt* result = &other.operator-(*this);
+			result->isNegative = true;
+			return *result;
+		}
+		else
+		{
+			return *subtractPositive(other);
+		}
+	}
+
+	BigInt& operator*(const BigInt& other) const
 	{
 		BigInt* result = new BigInt("0");
 
-		if (other.isZero())
+		if (other.isZero() || this->isZero())
 		{
 			return *result;
 		}
@@ -217,6 +293,8 @@ public:
 			partialProduct->MultiplyByPowerOf10(i);
 			*result = *result + *partialProduct;
 		}
+
+		result->isNegative = this->isNegative ^ other.isNegative;
 
 		return *result;
 
@@ -231,21 +309,36 @@ public:
 
 		BigInt* result = new BigInt("0");
 
+		if (this->isZero())
+		{
+			return *result;
+		}
+
 		BigInt divisor(other);
+
+		result->isNegative = this->isNegative ^ other.isNegative;
+
+		BigInt* tmp = new BigInt("1");
 
 		while (*this >= divisor)
 		{
 			*this = *this - divisor;
-			*result = *result + BigInt("1");
+			*result = *result + *tmp;
 		}
 
+		delete tmp;
 		return *result;
 	}
 
 };
 
+
 std::ostream& operator<<(std::ostream& os, const BigInt& num)
 {
+	if (num.isNegative)
+	{
+		os << '-';
+	}
 	for (int i = num.digits.size() - 1; i >= 0; i--)
 	{
 		os << num.digits[i];
@@ -256,19 +349,23 @@ std::ostream& operator<<(std::ostream& os, const BigInt& num)
 int main()
 {
 
-	BigInt num1("500");
-	BigInt num2("2");
+	BigInt* num1 = new BigInt("-400");
+	BigInt* num2 = new BigInt("-100");
 
 	try
 	{
-		BigInt num3 = num1 / num2;
-		std::cout << num3 << std::endl;
+		BigInt* num3 = &(*num1 + *num2);
+		std::cout << *num3 << std::endl;
+		delete num3;
 	}
 	catch (const std::invalid_argument& e)
 	{
 		std::cerr << "Error: " << e.what() << std::endl;
 	}
 
+	delete num1;
+	delete num2;
+	
 
 	return 0;
 }
